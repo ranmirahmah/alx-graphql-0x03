@@ -1,32 +1,73 @@
-import { useQuery } from "@apollo/client";
-import { GET_PAGINATED_CHARACTERS } from "@/graphql/queries";
+import { useQuery } from "@apollo/client"
+import { GET_EPISODES } from "@/graphql/queries"
+import { EpisodeProps } from "@/interfaces"
+import EpisodeCard from "@/components/common/EpisodeCard"
+import { useEffect, useState } from "react"
 
-export default function Home() {
-  const { data, loading, error } = useQuery(GET_PAGINATED_CHARACTERS);
 
-  if (loading) return <p>Loading characters...</p>;
-  if (error) return <p>Error fetching characters 😢</p>;
 
-  // Combine all pages' results into one array
-  const characters = [
-    ...data.page1.results,
-    ...data.page2.results,
-    ...data.page3.results,
-    ...data.page4.results,
-  ];
+const Home: React.FC = () => {
+
+  const [page, setPage] = useState<number>(1)
+  const { loading, error, data, refetch } = useQuery(GET_EPISODES, {
+    variables: {
+      page: page
+    }
+  })
+
+  useEffect(() => {
+    refetch()
+  }, [page, refetch])
+
+  if (loading) return <h1>Loading...</h1>
+  if (error) return <h1>Error</h1>
+
+  const results = data?.episodes.results
+  const info = data?.episodes.info
 
   return (
-    <main style={{ padding: "2rem" }}>
-      <h1>Rick and Morty Characters (Paginated)</h1>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, 180px)", gap: "1rem" }}>
-        {characters.map((char: any) => (
-          <div key={char.id} style={{ border: "1px solid #ddd", borderRadius: "10px", padding: "0.5rem" }}>
-            <img src={char.image} alt={char.name} style={{ width: "100%", borderRadius: "10px" }} />
-            <p><strong>{char.name}</strong></p>
-            <p>{char.status}</p>
-          </div>
-        ))}
-      </div>
-    </main>
-  );
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#A3D5E0] to-[#F4F4F4] text-gray-800">
+      {/* Header */}
+      <header className="bg-[#4CA1AF] text-white py-6 text-center shadow-md">
+        <h1 className="text-4xl font-bold tracking-wide">Rick and Morty Episodes</h1>
+        <p className="mt-2 text-lg italic">Explore the multiverse of adventures!</p>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-grow p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {results && results.map(({ id, name, air_date, episode }: EpisodeProps, key: number) => (
+            <EpisodeCard
+              id={id}
+              name={name}
+              air_date={air_date}
+              episode={episode}
+              key={key}
+            />
+          ))}
+        </div>
+
+        {/* Pagination Buttons */}
+        <div className="flex justify-between mt-6">
+          <button 
+            onClick={() => setPage(prev => prev > 1 ? prev - 1 : 1)}
+            className="bg-[#45B69C] text-white font-semibold py-2 px-6 rounded-lg shadow-lg hover:bg-[#3D9B80] transition duration-200 transform hover:scale-105">
+            Previous
+          </button>
+          <button 
+            onClick={() => setPage(prev => prev < info.pages ? prev + 1 : prev)}
+            className="bg-[#45B69C] text-white font-semibold py-2 px-6 rounded-lg shadow-lg hover:bg-[#3D9B80] transition duration-200 transform hover:scale-105">
+            Next
+          </button>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-[#4CA1AF] text-white py-4 text-center shadow-md">
+        <p>&copy; 2024 Rick and Morty Fan Page</p>
+      </footer>
+    </div>
+  )
 }
+
+export default Home
